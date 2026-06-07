@@ -1,118 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bento — Portfólio</title>
-  <style>
-    :root {
-      --branco: #ffffff;
-      --preto: #000000;
-      --margem: 10px;
-      --texto: 16px;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-
-    body {
-      background: #1c1c1e;          /* canvas escuro ao redor do "celular" */
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    }
-
-    /* moldura mobile centralizada */
-    .app {
-      position: relative;
-      max-width: 430px;
-      margin: 0 auto;
-      background: var(--preto);
-      color: var(--branco);
-      font-weight: 500;            /* medium */
-      font-size: var(--texto);
-    }
-
-    /* HEADER: fixo no topo, centralizado sobre a coluna, transparente */
-    .header {
-      position: fixed;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 430px;
-      z-index: 10;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--margem);
-    }
-    .header a {
-      color: var(--branco);
-      text-decoration: none;
-      font-size: var(--texto);
-      font-weight: 500;
-    }
-
-    /* PROJETO: cada um ocupa a tela inteira */
-    .projeto {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      background: var(--preto);
-      overflow: hidden;
-    }
-    .projeto__video {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .projeto__nome {
-      position: absolute;
-      bottom: var(--margem);
-      left: var(--margem);
-      z-index: 2;
-      color: var(--branco);
-      font-size: var(--texto);
-      font-weight: 500;
-    }
-  </style>
-</head>
-<body>
-  <div class="app">
-    <header class="header">
-      <a href="index.html">Bento</a>
-      <a href="#">Projetos</a>
-    </header>
-
-    <main id="projetos"></main>
-  </div>
-
-  <script>
-    // ===== Lista de projetos (temporária — vai virar fetch no Sanity) =====
-    const projetos = [
-      { nome: "Projeto 1", video: "videos/projeto-1.webm", link: "projeto.html" },
-      { nome: "Projeto 2", video: "videos/projeto-2.webm" },
-      { nome: "Projeto 3", video: "videos/projeto-3.webm" },
-    ];
-
-    const container = document.querySelector("#projetos");
-
-    projetos.forEach((projeto) => {
-      const section = document.createElement("section");
-      section.className = "projeto";
-      section.innerHTML = `
-        <video class="projeto__video" autoplay loop muted playsinline>
-          <source src="${projeto.video}" type="video/webm">
-        </video>
-        <span class="projeto__nome">${projeto.nome}</span>
-      `;
-      if (projeto.link) {
-        section.style.cursor = "pointer";
-        section.addEventListener("click", () => { window.location.href = projeto.link; });
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bento — Portfólio</title>
+    <style>
+      :root {
+        --branco: #ffffff;
+        --preto: #000000;
+        --margem: 10px;
+        --texto: 16px;
       }
-      container.appendChild(section);
-    });
-  </script>
-</body>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: #1c1c1e;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      .app {
+        position: relative;
+        max-width: 430px;
+        margin: 0 auto;
+        background: var(--preto);
+        color: var(--branco);
+        font-weight: 500;
+        font-size: var(--texto);
+      }
+      .header {
+        position: fixed;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 430px;
+        z-index: 10;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--margem);
+      }
+      .header a {
+        color: var(--branco);
+        text-decoration: none;
+        font-size: var(--texto);
+        font-weight: 500;
+      }
+      .projeto {
+        position: relative;
+        width: 100%;
+        height: 100vh;
+        background: var(--preto);
+        overflow: hidden;
+        cursor: pointer;
+      }
+      .projeto__video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .projeto__nome {
+        position: absolute;
+        bottom: var(--margem);
+        left: var(--margem);
+        z-index: 2;
+        color: var(--branco);
+        font-size: var(--texto);
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <a href="index.html">Bento</a>
+        <a href="#">Projetos</a>
+      </header>
+      <main id="projetos"></main>
+    </div>
+
+    <script>
+      // ===== Configuração do Sanity =====
+      const SANITY_PROJECT_ID = "e673yj2i";
+      const SANITY_DATASET = "production";
+      const SANITY_API_VER = "2024-01-01";
+
+      // helper: faz o fetch na API do Sanity com GROQ
+      function sanityFetch(query, params = {}) {
+        const base = `https://${SANITY_PROJECT_ID}.api.sanity.io/v${SANITY_API_VER}/data/query/${SANITY_DATASET}`;
+        const q = `query=${encodeURIComponent(query)}`;
+        const p = Object.entries(params)
+          .map(
+            ([k, v]) =>
+              `${encodeURIComponent("$" + k)}=${encodeURIComponent(JSON.stringify(v))}`,
+          )
+          .join("&");
+        return fetch(`${base}?${q}${p ? "&" + p : ""}`)
+          .then((r) => r.json())
+          .then((d) => d.result);
+      }
+
+      async function init() {
+        // busca todos os projetos ordenados por data de criação
+        const projetos = await sanityFetch(
+          `*[_type == "projeto"] | order(_createdAt asc) {
+          nome,
+          "slug": slug.current,
+          "capaUrl": capa.asset->url
+        }`,
+        );
+
+        const container = document.querySelector("#projetos");
+        if (!projetos || projetos.length === 0) return;
+
+        projetos.forEach((projeto) => {
+          const section = document.createElement("section");
+          section.className = "projeto";
+
+          // capa: vídeo (.webm) ou imagem (.webp)
+          let mediaHTML = "";
+          if (projeto.capaUrl) {
+            if (projeto.capaUrl.includes(".webm")) {
+              mediaHTML = `<video class="projeto__video" autoplay loop muted playsinline src="${projeto.capaUrl}"></video>`;
+            } else {
+              mediaHTML = `<img class="projeto__video" src="${projeto.capaUrl}" alt="${projeto.nome}">`;
+            }
+          }
+
+          section.innerHTML = `
+          ${mediaHTML}
+          <span class="projeto__nome">${projeto.nome}</span>
+        `;
+
+          // clique leva pra página do projeto com o slug na URL
+          section.addEventListener("click", () => {
+            window.location.href = `projeto.html?slug=${projeto.slug}`;
+          });
+
+          container.appendChild(section);
+        });
+      }
+
+      init();
+    </script>
+  </body>
 </html>

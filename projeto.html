@@ -1,148 +1,182 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bento — Projeto</title>
-  <style>
-    :root {
-      --branco: #ffffff;
-      --preto: #000000;
-      --margem: 10px;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bento — Projeto</title>
+    <style>
+      :root {
+        --branco: #ffffff;
+        --preto: #000000;
+        --margem: 10px;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: #1c1c1e;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      .app {
+        position: relative;
+        max-width: 430px;
+        margin: 0 auto;
+        min-height: 100vh;
+        background: var(--preto);
+        color: var(--branco);
+      }
+      .header {
+        position: fixed;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 430px;
+        z-index: 10;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--margem);
+        background: var(--preto);
+      }
+      .header a {
+        color: var(--branco);
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: 500;
+      }
+      .projeto-page {
+        padding: 50vh var(--margem) var(--margem);
+      }
+      .detalhe {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .detalhe__titulo {
+        font-size: 48px;
+        font-weight: 500;
+        line-height: 1.05;
+        margin-bottom: 8px;
+      }
+      .detalhe__por,
+      .detalhe__filtros {
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.4;
+      }
+      .detalhe__por a {
+        color: var(--branco);
+        text-decoration: underline;
+      }
+      .detalhe__midia img,
+      .detalhe__midia video {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .detalhe__texto {
+        font-size: 16px;
+        font-weight: 500;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <a href="index.html">Bento</a>
+        <a href="index.html">Home</a>
+      </header>
+      <main class="projeto-page">
+        <article id="detalhe" class="detalhe"></article>
+      </main>
+    </div>
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    <script>
+      // ===== Configuração do Sanity =====
+      const SANITY_PROJECT_ID = "e673yj2i";
+      const SANITY_DATASET = "production";
+      const SANITY_API_VER = "2024-01-01";
 
-    body {
-      background: #1c1c1e;
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    }
+      function sanityFetch(query, params = {}) {
+        const base = `https://${SANITY_PROJECT_ID}.api.sanity.io/v${SANITY_API_VER}/data/query/${SANITY_DATASET}`;
+        const q = `query=${encodeURIComponent(query)}`;
+        const p = Object.entries(params)
+          .map(
+            ([k, v]) =>
+              `${encodeURIComponent("$" + k)}=${encodeURIComponent(JSON.stringify(v))}`,
+          )
+          .join("&");
+        return fetch(`${base}?${q}${p ? "&" + p : ""}`)
+          .then((r) => r.json())
+          .then((d) => d.result);
+      }
 
-    .app {
-      position: relative;
-      max-width: 430px;
-      margin: 0 auto;
-      min-height: 100vh;
-      background: var(--preto);
-      color: var(--branco);
-    }
+      async function init() {
+        // lê o slug da URL: projeto.html?slug=meu-projeto
+        const params = new URLSearchParams(window.location.search);
+        const slug = params.get("slug");
+        if (!slug) {
+          window.location.href = "index.html";
+          return;
+        }
 
-    /* HEADER: igual à home, mas o botão é Home. Fundo preto pra cobrir o conteúdo ao rolar */
-    .header {
-      position: fixed;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 430px;
-      z-index: 10;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--margem);
-      background: var(--preto);
-    }
-    .header a {
-      color: var(--branco);
-      text-decoration: none;
-      font-size: 16px;
-      font-weight: 500;
-    }
+        // busca o projeto pelo slug
+        const projeto = await sanityFetch(
+          `*[_type == "projeto" && slug.current == $slug][0] {
+          nome, por, filtros,
+          conteudo[]{ _type, _key, conteudo, "url": arquivo.asset->url }
+        }`,
+          { slug },
+        );
 
-    /* conteúdo começa a partir do meio da tela */
-    .projeto-page { padding: 50vh var(--margem) var(--margem); }
-    .detalhe {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
+        if (!projeto) {
+          window.location.href = "index.html";
+          return;
+        }
 
-    /* 1. Informações sobre o projeto */
-    .detalhe__titulo {
-      font-size: 48px;               /* helvética medium 48 */
-      font-weight: 500;
-      line-height: 1.05;
-      margin-bottom: 8px;
-    }
-    .detalhe__por,
-    .detalhe__filtros {
-      font-size: 14px;               /* helvética regular 14 */
-      font-weight: 400;
-      line-height: 1.4;
-    }
-    .detalhe__por a { color: var(--branco); text-decoration: underline; }
+        // atualiza o título da aba do navegador
+        document.title = `Bento — ${projeto.nome}`;
 
-    /* 2. Mídias (.webp ou .webm) */
-    .detalhe__midia img,
-    .detalhe__midia video { width: 100%; height: auto; display: block; }
-    .detalhe__placeholder {
-      width: 100%;
-      aspect-ratio: 1 / 1.15;
-      background: #d9d9d9;           /* placeholder cinza */
-    }
+        const el = document.querySelector("#detalhe");
 
-    /* 3. Caixa de texto */
-    .detalhe__texto {
-      font-size: 16px;               /* helvética medium 16 */
-      font-weight: 500;
-      line-height: 1.5;
-    }
-  </style>
-</head>
-<body>
-  <div class="app">
-    <header class="header">
-      <a href="index.html">Bento</a>
-      <a href="index.html">Home</a>
-    </header>
+        // linha "Por: Autor1 & Autor2"
+        const porLinks = (projeto.por || [])
+          .map((p) => `<a href="${p.link || "#"}">${p.nome}</a>`)
+          .join(" & ");
 
-    <main class="projeto-page">
-      <article id="detalhe" class="detalhe"></article>
-    </main>
-  </div>
+        // blocos de conteúdo (mídias + textos na ordem que você definiu no Studio)
+        const conteudoHTML = (projeto.conteudo || [])
+          .map((block) => {
+            if (block._type === "midia" && block.url) {
+              return block.url.includes(".webm")
+                ? `<div class="detalhe__midia"><video src="${block.url}" autoplay loop muted playsinline></video></div>`
+                : `<div class="detalhe__midia"><img src="${block.url}" alt="${projeto.nome}"></div>`;
+            }
+            if (block._type === "texto" && block.conteudo) {
+              return `<p class="detalhe__texto">${block.conteudo}</p>`;
+            }
+            return "";
+          })
+          .join("");
 
-  <script>
-    // ===== Dados do projeto (TEMPLATE — vai virar fetch no Sanity) =====
-    const projeto = {
-      titulo: "Projeto",
-      por: [
-        { nome: "Bento Avellar", link: "#" },
-        { nome: "Vitor Vigo", link: "#" },
-      ],
-      filtros: ["Ambiental", "Identidade Visual", "Mídias Sociais"],
-      midias: [
-        { tipo: "imagem", src: "" },
-        { tipo: "imagem", src: "" },
-      ],
-      texto:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-    };
+        el.innerHTML = `
+        <div class="detalhe__info">
+          <h1 class="detalhe__titulo">${projeto.nome}</h1>
+          ${porLinks ? `<p class="detalhe__por">Por: ${porLinks}</p>` : ""}
+          ${(projeto.filtros || []).length ? `<p class="detalhe__filtros">${projeto.filtros.join(" , ")}</p>` : ""}
+        </div>
+        ${conteudoHTML}
+      `;
+      }
 
-    const el = document.querySelector("#detalhe");
-
-    const porLinks = projeto.por
-      .map((p) => `<a href="${p.link}">${p.nome}</a>`)
-      .join(" & ");
-
-    const midiasHTML = projeto.midias
-      .map((m) => {
-        if (!m.src) return `<div class="detalhe__placeholder"></div>`;
-        if (m.tipo === "video")
-          return `<div class="detalhe__midia"><video src="${m.src}" autoplay loop muted playsinline></video></div>`;
-        return `<div class="detalhe__midia"><img src="${m.src}" alt="${projeto.titulo}"></div>`;
-      })
-      .join("");
-
-    el.innerHTML = `
-      <div class="detalhe__info">
-        <h1 class="detalhe__titulo">${projeto.titulo}</h1>
-        <p class="detalhe__por">Por: ${porLinks}</p>
-        <p class="detalhe__filtros">${projeto.filtros.join(" , ")}</p>
-      </div>
-      ${midiasHTML}
-      <p class="detalhe__texto">${projeto.texto}</p>
-    `;
-  </script>
-</body>
+      init();
+    </script>
+  </body>
 </html>
