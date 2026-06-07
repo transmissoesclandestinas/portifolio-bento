@@ -1,0 +1,12 @@
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Dependências (úteis quando o Sanity Studio entrar)
+node_modules/
+.env
+.env.local
+
+# Build / cache
+.vercel
+dist/
