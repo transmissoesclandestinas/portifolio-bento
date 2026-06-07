@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
     <title>Bento — Projeto</title>
     <style>
       :root {
@@ -18,30 +19,28 @@
       html {
         scroll-behavior: smooth;
       }
+
       body {
-        background: #1c1c1e;
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      }
-      .app {
-        position: relative;
-        max-width: 430px;
-        margin: 0 auto;
-        min-height: 100vh;
         background: var(--preto);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         color: var(--branco);
       }
+
+      .app {
+        width: 100%;
+      }
+
+      /* HEADER: fixo, fundo preto, largura total */
       .header {
         position: fixed;
         top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        max-width: 430px;
+        left: 0;
+        right: 0;
         z-index: 10;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: var(--margem);
+        padding: var(--margem) 20px;
         background: var(--preto);
       }
       .header a {
@@ -50,23 +49,30 @@
         font-size: 16px;
         font-weight: 500;
       }
+
+      /* conteúdo: começa do meio, centralizado, max-width pra desktop */
       .projeto-page {
-        padding: 50vh var(--margem) var(--margem);
+        padding: 50vh 20px 40px;
+        max-width: 800px;
+        margin: 0 auto;
       }
+
       .detalhe {
         display: flex;
         flex-direction: column;
         gap: 24px;
       }
+
+      /* título: escala suave com o tamanho da tela */
       .detalhe__titulo {
-        font-size: 48px;
+        font-size: clamp(48px, 6vw, 96px);
         font-weight: 500;
         line-height: 1.05;
         margin-bottom: 8px;
       }
       .detalhe__por,
       .detalhe__filtros {
-        font-size: 14px;
+        font-size: clamp(14px, 1.5vw, 18px);
         font-weight: 400;
         line-height: 1.4;
       }
@@ -74,16 +80,33 @@
         color: var(--branco);
         text-decoration: underline;
       }
+
+      /* mídias */
       .detalhe__midia img,
       .detalhe__midia video {
         width: 100%;
         height: auto;
         display: block;
       }
+
+      /* texto */
       .detalhe__texto {
-        font-size: 16px;
+        font-size: clamp(16px, 1.5vw, 20px);
         font-weight: 500;
         line-height: 1.5;
+      }
+
+      /* responsivo: padding maior em telas grandes */
+      @media (min-width: 768px) {
+        .header {
+          padding: var(--margem) 40px;
+        }
+        .projeto-page {
+          padding: 50vh 40px 80px;
+        }
+        .detalhe {
+          gap: 40px;
+        }
       }
     </style>
   </head>
@@ -99,7 +122,6 @@
     </div>
 
     <script>
-      // ===== Configuração do Sanity =====
       const SANITY_PROJECT_ID = "e673yj2i";
       const SANITY_DATASET = "production";
       const SANITY_API_VER = "2024-01-01";
@@ -119,7 +141,6 @@
       }
 
       async function init() {
-        // lê o slug da URL: projeto.html?slug=meu-projeto
         const params = new URLSearchParams(window.location.search);
         const slug = params.get("slug");
         if (!slug) {
@@ -127,7 +148,6 @@
           return;
         }
 
-        // busca o projeto pelo slug
         const projeto = await sanityFetch(
           `*[_type == "projeto" && slug.current == $slug][0] {
           nome, por, filtros,
@@ -141,17 +161,14 @@
           return;
         }
 
-        // atualiza o título da aba do navegador
         document.title = `Bento — ${projeto.nome}`;
 
         const el = document.querySelector("#detalhe");
 
-        // linha "Por: Autor1 & Autor2"
         const porLinks = (projeto.por || [])
           .map((p) => `<a href="${p.link || "#"}">${p.nome}</a>`)
           .join(" & ");
 
-        // blocos de conteúdo (mídias + textos na ordem que você definiu no Studio)
         const conteudoHTML = (projeto.conteudo || [])
           .map((block) => {
             if (block._type === "midia" && block.url) {

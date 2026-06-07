@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
     <title>Bento — Portfólio</title>
     <style>
       :root {
@@ -16,34 +17,35 @@
         padding: 0;
         box-sizing: border-box;
       }
+
+      /* scroll snap: cada projeto ocupa a tela e trava no lugar */
       html {
-        scroll-behavior: smooth;
+        scroll-snap-type: y mandatory;
       }
+
       body {
-        background: #1c1c1e;
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      }
-      .app {
-        position: relative;
-        max-width: 430px;
-        margin: 0 auto;
         background: var(--preto);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         color: var(--branco);
-        font-weight: 500;
-        font-size: var(--texto);
       }
+
+      .app {
+        width: 100%;
+      }
+
+      /* HEADER: fixo no topo, largura total */
       .header {
         position: fixed;
         top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        max-width: 430px;
+        left: 0;
+        right: 0;
         z-index: 10;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: var(--margem);
+        padding: var(--margem) 20px;
+        font-weight: 500;
+        font-size: var(--texto);
       }
       .header a {
         color: var(--branco);
@@ -51,6 +53,8 @@
         font-size: var(--texto);
         font-weight: 500;
       }
+
+      /* PROJETO: cada seção ocupa 100% da tela e trava no scroll */
       .projeto {
         position: relative;
         width: 100%;
@@ -58,6 +62,7 @@
         background: var(--preto);
         overflow: hidden;
         cursor: pointer;
+        scroll-snap-align: start;
       }
       .projeto__video {
         position: absolute;
@@ -69,11 +74,21 @@
       .projeto__nome {
         position: absolute;
         bottom: var(--margem);
-        left: var(--margem);
+        left: 20px;
         z-index: 2;
         color: var(--branco);
         font-size: var(--texto);
         font-weight: 500;
+      }
+
+      /* responsivo: padding maior em telas grandes */
+      @media (min-width: 768px) {
+        .header {
+          padding: var(--margem) 40px;
+        }
+        .projeto__nome {
+          left: 40px;
+        }
       }
     </style>
   </head>
@@ -87,12 +102,10 @@
     </div>
 
     <script>
-      // ===== Configuração do Sanity =====
       const SANITY_PROJECT_ID = "e673yj2i";
       const SANITY_DATASET = "production";
       const SANITY_API_VER = "2024-01-01";
 
-      // helper: faz o fetch na API do Sanity com GROQ
       function sanityFetch(query, params = {}) {
         const base = `https://${SANITY_PROJECT_ID}.api.sanity.io/v${SANITY_API_VER}/data/query/${SANITY_DATASET}`;
         const q = `query=${encodeURIComponent(query)}`;
@@ -108,7 +121,6 @@
       }
 
       async function init() {
-        // busca todos os projetos ordenados por data de criação
         const projetos = await sanityFetch(
           `*[_type == "projeto"] | order(_createdAt asc) {
           nome,
@@ -124,7 +136,6 @@
           const section = document.createElement("section");
           section.className = "projeto";
 
-          // capa: vídeo (.webm) ou imagem (.webp)
           let mediaHTML = "";
           if (projeto.capaUrl) {
             if (projeto.capaUrl.includes(".webm")) {
@@ -139,7 +150,6 @@
           <span class="projeto__nome">${projeto.nome}</span>
         `;
 
-          // clique leva pra página do projeto com o slug na URL
           section.addEventListener("click", () => {
             window.location.href = `projeto.html?slug=${projeto.slug}`;
           });
